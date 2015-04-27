@@ -91,7 +91,9 @@
 				scale: true,
 				snap: { rotate: 0, scale: 0, drag: 0 },
 				snapDist: { rotate: 0, scale: 0, drag: 7 },
-				size: 5
+				size: 5,
+				snappedX: false,
+				snappedY: false
 			},
 			subject: subject
 		};
@@ -591,6 +593,16 @@
 					if ( ft.o.viewBoxRatio ) {
 						dx *= ft.o.viewBoxRatio.x;
 						dy *= ft.o.viewBoxRatio.y;
+					}
+
+					if (!ft.opts.snappedY) {
+						ft.attrs.translate.y = ft.o.translate.y + dy;
+						bbox.y += dy;
+					}
+
+					if (!ft.opts.snappedX) {
+						ft.attrs.translate.x = ft.o.translate.x + dx;
+						bbox.x += dx;
 					}
 
 					ft.attrs.translate.x = ft.o.translate.x + dx;
