@@ -605,12 +605,6 @@
 						bbox.x += dx;
 					}
 
-					ft.attrs.translate.x = ft.o.translate.x + dx;
-					ft.attrs.translate.y = ft.o.translate.y + dy;
-
-					bbox.x += dx;
-					bbox.y += dy;
-
 					applyLimits(bbox);
 
 					asyncCallback([ 'drag' ]);
