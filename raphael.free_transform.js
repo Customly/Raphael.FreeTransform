@@ -93,7 +93,9 @@
 				snapDist: { rotate: 0, scale: 0, drag: 7 },
 				size: 5,
 				snappedX: false,
-				snappedY: false
+				snappedY: false,
+				corners: 7,	//0-7
+				lines: true
 			},
 			subject: subject
 		};
@@ -131,8 +133,8 @@
 			ft.axes.map(function(axis) {
 				if ( ft.handles[axis] ) {
 					cx           = ft.attrs.center.x + ft.attrs.translate.x + radius[axis] * ft.opts.distance * Math.cos(rad[axis]),
-					cy           = ft.attrs.center.y + ft.attrs.translate.y + radius[axis] * ft.opts.distance * Math.sin(rad[axis]),
-					viewBoxRatio = { x: 1, y: 1 };
+						cy           = ft.attrs.center.y + ft.attrs.translate.y + radius[axis] * ft.opts.distance * Math.sin(rad[axis]),
+						viewBoxRatio = { x: 1, y: 1 };
 
 					// viewBox might be scaled
 					if ( paper._viewBox ) {
@@ -150,8 +152,16 @@
 
 					ft.handles[axis].disc.attr({ cx: cx, cy: cy });
 
+					var rotatelinepath;
+					if(ft.opts.lines){
+						rotatelinepath = [ [ 'M', ft.attrs.center.x + ft.attrs.translate.x, ft.attrs.center.y + ft.attrs.translate.y ], [ 'L', ft.handles[axis].disc.attrs.cx, ft.handles[axis].disc.attrs.cy ] ]
+					}
+					else{
+						rotatelinepath = [['']];
+					}
+
 					ft.handles[axis].line.toFront().attr({
-						path: [ [ 'M', ft.attrs.center.x + ft.attrs.translate.x, ft.attrs.center.y + ft.attrs.translate.y ], [ 'L', ft.handles[axis].disc.attrs.cx, ft.handles[axis].disc.attrs.cy ] ]
+						path: rotatelinepath
 					});
 
 					ft.handles[axis].disc.toFront();
@@ -159,14 +169,22 @@
 			});
 
 			if ( ft.bbox ) {
-				ft.bbox.toFront().attr({
-					path: [
+				var boxpath;
+				if(ft.opts.lines){
+					boxpath = [
 						[ 'M', corners[0].x, corners[0].y ],
 						[ 'L', corners[1].x, corners[1].y ],
 						[ 'L', corners[2].x, corners[2].y ],
 						[ 'L', corners[3].x, corners[3].y ],
 						[ 'L', corners[0].x, corners[0].y ]
 					]
+				}
+				else {
+					boxpath = [['']];
+				}
+
+				ft.bbox.toFront().attr({
+					path: boxpath
 				});
 
 				if ( ft.handles.bbox ) {
@@ -213,9 +231,9 @@
 
 			if ( ft.opts.rotate.indexOf('self') >= 0 ) {
 				radius = Math.max(
-					Math.sqrt(Math.pow(corners[1].x - corners[0].x, 2) + Math.pow(corners[1].y - corners[0].y, 2)),
-					Math.sqrt(Math.pow(corners[2].x - corners[1].x, 2) + Math.pow(corners[2].y - corners[1].y, 2))
-				) / 2;
+						Math.sqrt(Math.pow(corners[1].x - corners[0].x, 2) + Math.pow(corners[1].y - corners[0].y, 2)),
+						Math.sqrt(Math.pow(corners[2].x - corners[1].x, 2) + Math.pow(corners[2].y - corners[1].y, 2))
+					) / 2;
 			}
 
 			return ft;
@@ -228,7 +246,7 @@
 			var
 				i, handle, rotate, scale,
 				handles    = [];
-				draggables = [];
+			draggables = [];
 
 			ft.hideHandles();
 
@@ -346,7 +364,7 @@
 					}
 
 					cx = dx + handle.element.ox,
-					cy = dy + handle.element.oy;
+						cy = dy + handle.element.oy;
 
 					if ( handle.rotate ) {
 						rad = Math.atan2(cy - ft.o.center.y - ft.o.translate.y, cx - ft.o.center.x - ft.o.translate.x);
@@ -365,8 +383,8 @@
 					}
 
 					opposite   = cx - ft.o.center.x - ft.o.translate.x - ( ft.opts.customCorners ? ft.opts.customCorners.distance : 0 ),
-					adjacent   = cy - ft.o.center.y - ft.o.translate.y - ( ft.opts.customCorners ? ft.opts.customCorners.distance : 0 ),
-					hypotenuse = Math.sqrt(Math.pow(opposite, 2) + Math.pow(adjacent, 2));
+						adjacent   = cy - ft.o.center.y - ft.o.translate.y - ( ft.opts.customCorners ? ft.opts.customCorners.distance : 0 ),
+						hypotenuse = Math.sqrt(Math.pow(opposite, 2) + Math.pow(adjacent, 2));
 
 					if ( handle.scale ) {
 						ft.attrs.scale[handle.axis] = hypotenuse / ( ft.o.size[handle.axis] / 2 * ft.o.distance );
@@ -406,11 +424,11 @@
 
 					if ( handle.isCorner ) {
 						hypotenuse = Math.sqrt(Math.pow(ft.o.size.x * ft.o.scale.x, 2) + Math.pow(ft.o.size.y * ft.o.scale.y, 2)) / 2,
-						opposite   = ft.o.size.x * ft.o.scale.x / 2,
-						pos        = {
-							x: handle.element.ox - ( ft.o.center.x + ft.o.x + ft.o.translate.x ),
-							y: handle.element.oy - ( ft.o.center.y + ft.o.y + ft.o.translate.y )
-						};
+							opposite   = ft.o.size.x * ft.o.scale.x / 2,
+							pos        = {
+								x: handle.element.ox - ( ft.o.center.x + ft.o.x + ft.o.translate.x ),
+								y: handle.element.oy - ( ft.o.center.y + ft.o.y + ft.o.translate.y )
+							};
 
 						// Distance from centre of handle to centre of element
 						ft.o.distance = hypotenuse / opposite;
@@ -472,8 +490,8 @@
 						// Maintain aspect ratio
 						if ( handle.isCorner && ft.opts.keepRatio.indexOf('bboxCorners') !== -1 ) {
 							ratio = ( ft.attrs.size.x * ft.attrs.scale.x ) / ( ft.attrs.size.y * ft.attrs.scale.y ),
-							tdy   = rx * handle.x * ( 1 / ratio ),
-							tdx   = ry * handle.y * ratio;
+								tdy   = rx * handle.x * ( 1 / ratio ),
+								tdx   = ry * handle.y * ratio;
 
 							if ( tdx > tdy * ratio ) {
 								rx = tdx * handle.x;
@@ -640,7 +658,7 @@
 			});
 
 			rotate = ft.opts.rotate.indexOf('self') >= 0,
-			scale  = ft.opts.scale .indexOf('self') >= 0;
+				scale  = ft.opts.scale .indexOf('self') >= 0;
 
 			if ( rotate || scale ) {
 				subject.drag(function(dx, dy, x, y) {
@@ -763,8 +781,8 @@
 			for ( i in options ) {
 				if ( options[i] && options[i].constructor === Object ) {
 					if(ft.opts[i] === false){
-            ft.opts[i] = {};
-          }
+						ft.opts[i] = {};
+					}
 					for ( j in options[i] ) {
 						if ( options[i].hasOwnProperty(j) ) {
 							ft.opts[i][j] = options[i][j];
@@ -902,10 +920,10 @@
 					);
 				} else {
 					item.el.transform([
-						'R', rotate, center.x, center.y,
-						'S', scale.x, scale.y, center.x, center.y,
-						'T', translate.x, translate.y
-					] + ft.items[i].transformString);
+							'R', rotate, center.x, center.y,
+							'S', scale.x, scale.y, center.x, center.y,
+							'T', translate.x, translate.y
+						] + ft.items[i].transformString);
 
 					asyncCallback([ 'apply' ]);
 
@@ -1054,20 +1072,20 @@
 			// Snap to grid
 			if ( bbox && ft.opts.snap.drag ) {
 				x = bbox.x,
-				y = bbox.y,
+					y = bbox.y,
 
-				[ 0, 1 ].map(function() {
-					// Top and left sides first
-					dist.x = x - Math.round(x / ft.opts.snap.drag) * ft.opts.snap.drag;
-					dist.y = y - Math.round(y / ft.opts.snap.drag) * ft.opts.snap.drag;
+					[ 0, 1 ].map(function() {
+						// Top and left sides first
+						dist.x = x - Math.round(x / ft.opts.snap.drag) * ft.opts.snap.drag;
+						dist.y = y - Math.round(y / ft.opts.snap.drag) * ft.opts.snap.drag;
 
-					if ( Math.abs(dist.x) <= ft.opts.snapDist.drag ) { snap.x = dist.x; }
-					if ( Math.abs(dist.y) <= ft.opts.snapDist.drag ) { snap.y = dist.y; }
+						if ( Math.abs(dist.x) <= ft.opts.snapDist.drag ) { snap.x = dist.x; }
+						if ( Math.abs(dist.y) <= ft.opts.snapDist.drag ) { snap.y = dist.y; }
 
-					// Repeat for bottom and right sides
-					x += bbox.width  - snap.x;
-					y += bbox.height - snap.y;
-				});
+						// Repeat for bottom and right sides
+						x += bbox.width  - snap.x;
+						y += bbox.height - snap.y;
+					});
 
 				ft.attrs.translate.x -= snap.x;
 				ft.attrs.translate.y -= snap.y;
